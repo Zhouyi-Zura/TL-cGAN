@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from utils.cGAN import *
 from utils.datasets import *
-from utils.util import SSI_Loss
+from utils.util import *
 import hrnet
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
@@ -95,10 +95,14 @@ def train():
 
             for j in range(opt.task_num):
                 # Task-level Curriculum Learning
-                # Add Gaussian noise (Var = [0.01,0.09))
-                Gau_std = (0.01+0.08*(epoch/opt.n_epochs)*np.random.random()) ** 0.5
-                Gau_noise = torch.randn(label.size()) * Gau_std
-                data = Variable((batch["label"] + Gau_noise).type(Tensor))
+                # Introduce Rayleigh noise (sigma ∈ [0.2,0.9])
+                sigma = 0.2 + (0.9 - 0.2) * (epoch / opt.n_epochs) * np.random.random()
+                # Add Rayleigh noise (rayleigh_noise1) first to fill the pure black background
+                rayleigh_noise1 = torch.from_numpy(np.random.rayleigh(scale=0.1, size=(opt.batch_size, opt.img_size, opt.img_size))).float()
+                rayleigh_noise2 = torch.from_numpy(np.random.rayleigh(scale=sigma, size=(opt.batch_size, opt.img_size, opt.img_size))).float()
+                noise_img = (torch_norm(batch["label"]) + rayleigh_noise1) * rayleigh_noise2
+                noise_img = torch.clamp(noise_img, -1.0, 1.0)
+                data = Variable((noise_img).type(Tensor))
 
                 # Train Generators
                 fake = generator(data)                
