@@ -10,13 +10,9 @@ def normalization(data):
     _range = np.max(data) - np.min(data)
     return (data - np.min(data)) / (_range + 1e-10)
 
-def normalization(data):
+def torch_norm(data):
     _range = torch.max(data) - torch.min(data)
     return (data - torch.min(data)) / (_range + 1e-10)
-
-def normalization(data):
-    _range = np.max(data) - np.min(data)
-    return (data - np.min(data)) / (_range + 1e-10)
 
 def mkdir(path):
     if not os.path.exists(path):
